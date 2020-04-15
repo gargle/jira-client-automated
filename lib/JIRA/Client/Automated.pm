@@ -921,6 +921,34 @@ sub create_comment {
 }
 
 
+=head2 search_accountId
+
+    my $accountId = $jira->search_accountId($emailAddress)
+
+This method returns the accountId of a jira user identified by an email address.
+
+For example, to update the assignee of an issue:
+
+    $jira->update_issue( $issue->{key}, { "assignee" =>
+                                              { 'accountId' =>
+                                                $jira->search_accountId($emailAddress) }});
+
+=cut
+
+sub search_accountId {
+    my ($self, $emailAddress) = @_;
+    my $uri = $self->{auth_url} .
+        'user/search?query=' . $emailAddress . '&fields=accountId';
+    my $request = GET $uri, Content_Type => 'application/json';
+    my $response = $self->_perform_request($request);
+    my $results = $self->{_json}->decode($response->decoded_content());
+    my $data_ref = @{$results}[0];
+    die "something went wrong while searching for $emailAddress"
+        if ($data_ref->{emailAddress} ne $emailAddress);
+    return $data_ref->{accountId};
+}
+
+
 =head2 search_issues
 
     my @search_results = $jira->search_issues($jql, 1, 100, $fields);
